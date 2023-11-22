@@ -1,0 +1,6 @@
+[submodule "cam_interface"]
+	path = cam_interface
+	url = https://github.com/KarolineH/cam_interface.git
+[submodule "ros2_cam_if/cam_interface"]
+	path = ros2_cam_if/cam_interface
+	url = https://github.com/KarolineH/cam_interface.git
