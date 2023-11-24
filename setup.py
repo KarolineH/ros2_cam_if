@@ -1,6 +1,7 @@
 from setuptools import find_packages, setup
 
 package_name = 'ros2_cam_if'
+submodules = "ros2_cam_if/cam_interface"
 
 setup(
     name=package_name,
@@ -20,7 +21,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'my_node = ros2_cam_if.my_node:main'
+            'my_node = ros2_cam_if.my_node:main',
+            'eos_node = ros2_cam_if.eos_node:main'
         ],
     },
 )
