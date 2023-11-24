@@ -62,7 +62,7 @@ class EOS_node(Node):
 
     def sync_date_time(self,request,response):
         self.cam.sync_date_time()
-        response.current_val = 'done'
+        response.output_msg = 'done'
         return response
     
     def drive_focus(self,request,response):
@@ -71,12 +71,12 @@ class EOS_node(Node):
         # 3 == none
         # 4,5,6 == small, medium, large increment --> further 
         if len(request.val1) > 0:
-            self.cam.manual_focus(value=int(request.val1))
-            response.current_val = 'done'
+            msg = self.cam.manual_focus(value=int(request.val1))
+            response.output_msg = msg
             return response
         else:
             warnings.warn("No value passed to the manual focus drive service. Focus has not been adjusted.")
-            response.current_val = 'error, missing val1'
+            response.output_msg = 'error, missing val1'
             return response
     
     def get_aperture(self,request,response):
