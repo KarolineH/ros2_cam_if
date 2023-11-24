@@ -10,7 +10,6 @@ import os
 from cam_interface.capture import EOS
 from cam_interface import gphoto_util
 
-
 from cam_types.action import Capture
 from cam_types.srv import Config
 
@@ -21,8 +20,9 @@ class EOS_node(Node):
 
         # self.declare_parameter('port', rclpy.Parameter.Type.STRING) # USB port address, to be set in the launch file
         # self.declare_parameter('target_path', rclpy.Parameter.Type.STRING) # path to the target folder for image and vid downloads, to be set in the launch file
-        self.declare_parameter('port', 'usb:002,019')
+        self.declare_parameter('port', 'usb:002,020')
         self.declare_parameter('target_path', '/home/karoline/rosws/media')
+        # when initializing the camera, please make sure to specify a unique target path for media downloads, otherwise files might be overwritten
 
         try:
             port = self.get_parameter('port')
@@ -53,10 +53,11 @@ class EOS_node(Node):
         self.trigger_af_srv = self.create_service(Config, '~/trigger_af', self.trigger_AF)
 
         # set up actions
-        self._single_capture_svr = ActionServer(self,Capture,'single_capture',self.single_capture)
-        self._preview_capture_svr = ActionServer(self,Capture,'preview_capture',self.preview_capture)
-        self._preview_video_svr = ActionServer(self,Capture,'preview_video',self.preview_video)
+        self._single_capture_svr = ActionServer(self,Capture,'~/single_capture',self.single_capture)
+        self._preview_capture_svr = ActionServer(self,Capture,'~/preview_capture',self.preview_capture)
+        self._preview_video_svr = ActionServer(self,Capture,'~/preview_video',self.preview_video)
         self._burst_srv = ActionServer(self,Capture, '~/burst_capture', self.burst_capture)
+        self._video_capture_svr = ActionServer(self,Capture,'~/video_capture',self.video_capture)
 
 
     def sync_date_time(self,request,response):
@@ -205,7 +206,7 @@ class EOS_node(Node):
         else:
             goal_handle.abort()
             result = Capture.Result()
-            result.output_path = None
+            result.output_path = ''
             result.output_msg = msg
             return result
 
@@ -224,6 +225,19 @@ class EOS_node(Node):
         result.output_path = path
         result.output_msg = msg
         return result
+    
+    def video_capture(self, goal_handle):
+        # Video files are named by the camera naming convention, so should not overwrite by default
+        success, msg = self.cam.record_video(t=goal_handle.request.duration, download=goal_handle.request.download, target_path=self.get_parameter('target_path').value)
+        if success:
+            goal_handle.succeed()
+        else:
+            goal_handle.abort()
+        result = Capture.Result()
+        result.output_path = self.get_parameter('target_path').value
+        result.output_msg = msg
+        return result
+    
 
 def main():
     rclpy.init()
