@@ -2,7 +2,6 @@ import rclpy
 from rclpy.node import Node
 import warnings
 from rclpy.action import ActionServer
-import time
 import os 
 
 from .cam_interface.capture import EOS
@@ -36,6 +35,7 @@ class EOS_node(Node):
             exit()
 
         self.cam = EOS(port=port.value)
+        self.cam.sync_date_time() # sync camera date and time with PC at startup
         
         # set up services
         self.sync_date_time_srv = self.create_service(CameraConfig, '~/sync_date_time', self.sync_date_time)
