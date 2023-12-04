@@ -22,7 +22,6 @@ setup(
     entry_points={
         'console_scripts': [
             'test_client = ros2_cam_if.test_client:main',
-            'my_node = ros2_cam_if.my_node:main',
             'eos_node = ros2_cam_if.eos_node:main'
         ],
     },
