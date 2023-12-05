@@ -4,23 +4,23 @@ import warnings
 from rclpy.action import ActionServer
 import os 
 
-from .cam_interface.capture import EOS
-from .cam_interface import gphoto_util
-# from cam_interface.capture import EOS
-# from cam_interface import gphoto_util
+# from .cam_interface.capture import EOS
+# from .cam_interface import gphoto_util
+from cam_interface.capture import EOS
+from cam_interface import gphoto_util
 
 from capture_types.action import Capture
-from capture_types.srv import CameraConfig
+from capture_types.srv import CameraConfig, CaptureParams
 
 class EOS_node(Node):
 
     def __init__(self):
         super().__init__('eos_cam')
 
-        self.declare_parameter('port', rclpy.Parameter.Type.STRING) # USB port address, to be set in the launch file
-        self.declare_parameter('target_path', rclpy.Parameter.Type.STRING) # path to the target folder for image and vid downloads, to be set in the launch file
-        # self.declare_parameter('port', 'usb:002,008')
-        # self.declare_parameter('target_path', '/home/karoline/rosws/media')
+        # self.declare_parameter('port', rclpy.Parameter.Type.STRING) # USB port address, to be set in the launch file
+        # self.declare_parameter('target_path', rclpy.Parameter.Type.STRING) # path to the target folder for image and vid downloads, to be set in the launch file
+        self.declare_parameter('port', 'usb:002,019')
+        self.declare_parameter('target_path', '/home/karoline/rosws/media')
         # when initializing the camera, please make sure to specify a unique target path for media downloads, otherwise files might be overwritten
 
         try:
@@ -43,8 +43,8 @@ class EOS_node(Node):
         # set up services
         self.sync_date_time_srv = self.create_service(CameraConfig, '~/sync_date_time', self.sync_date_time)
         self.drive_focus_srv = self.create_service(CameraConfig, '~/drive_focus', self.drive_focus)
-        self.get_capture_params_srv = self.create_service(CaptureParam, '~/get_capture_params', self.get_capture_params)
-        self.set_capture_params_srv = self.create_service(CaptureParam, '~/set_capture_params', self.set_capture_params)
+        self.get_capture_params_srv = self.create_service(CaptureParams, '~/get_capture_params', self.get_capture_params)
+        self.set_capture_params_srv = self.create_service(CaptureParams, '~/set_capture_params', self.set_capture_params)
         self.get_imform_srv = self.create_service(CameraConfig, '~/get_image_format', self.get_imform)
         self.set_imform_srv = self.create_service(CameraConfig, '~/set_image_format', self.set_imform)
         self.set_afpoint_srv = self.create_service(CameraConfig, '~/set_af_point', self.set_afpoint)
@@ -89,13 +89,14 @@ class EOS_node(Node):
     def set_capture_params(self, request, response):
 
         # TODO: add check for valid values
+        inputs = [request.aperture, request.iso, request.shutterspeed, request.cont_af]
+        for i,string in enumerate(inputs):
+            if len(string) == 0:
+                inputs[i] = None
 
-        params, msg = self.cam.set_capture_parameters(aperture=request.aperture, iso=request.iso, shutterspeed=request.shutterspeed, cont_af=request.cont_af)
+        params, msg = self.cam.set_capture_parameters(aperture=inputs[0], iso=inputs[1], shutterspeed=inputs[2], c_AF=inputs[3])
         self.aperture, self.iso, self.shutterspeed, self.cont_af = params
-        response.aperture = self.aperture
-        response.iso = self.iso
-        response.shutterspeed = self.shutterspeed
-        response.cont_af = self.cont_af
+        response.aperture, response.iso, response.shutterspeed, response.cont_af = params
         response.output_msg = msg
         return response
     
