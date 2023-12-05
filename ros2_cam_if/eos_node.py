@@ -19,7 +19,7 @@ class EOS_node(Node):
 
         self.declare_parameter('port', rclpy.Parameter.Type.STRING) # USB port address, to be set in the launch file
         self.declare_parameter('target_path', rclpy.Parameter.Type.STRING) # path to the target folder for image and vid downloads, to be set in the launch file
-        # self.declare_parameter('port', 'usb:002,020')
+        # self.declare_parameter('port', 'usb:002,008')
         # self.declare_parameter('target_path', '/home/karoline/rosws/media')
         # when initializing the camera, please make sure to specify a unique target path for media downloads, otherwise files might be overwritten
 
@@ -36,17 +36,15 @@ class EOS_node(Node):
 
         self.cam = EOS(port=port.value)
         self.cam.sync_date_time() # sync camera date and time with PC at startup
+
+        # initalise capture parameters
+        self.aperture, self.iso, self.shutterspeed, self.cont_af = self.cam.get_capture_parameters()
         
         # set up services
         self.sync_date_time_srv = self.create_service(CameraConfig, '~/sync_date_time', self.sync_date_time)
         self.drive_focus_srv = self.create_service(CameraConfig, '~/drive_focus', self.drive_focus)
-        self.get_ap_srv = self.create_service(CameraConfig, '~/get_aperture', self.get_aperture)
-        self.set_ap_srv = self.create_service(CameraConfig, '~/set_aperture', self.set_aperture)
-        self.get_ss_srv = self.create_service(CameraConfig, '~/get_shutterspeed', self.get_shutter_speed)
-        self.set_ss_srv = self.create_service(CameraConfig, '~/set_shutterspeed', self.set_shutter_speed)
-        self.get_iso_srv = self.create_service(CameraConfig, '~/get_iso', self.get_iso)
-        self.set_iso_srv = self.create_service(CameraConfig, '~/set_iso', self.set_iso)
-        self.set_contaf_srv = self.create_service(CameraConfig, '~/set_continuous_af', self.set_cont_af)
+        self.get_capture_params_srv = self.create_service(CaptureParam, '~/get_capture_params', self.get_capture_params)
+        self.set_capture_params_srv = self.create_service(CaptureParam, '~/set_capture_params', self.set_capture_params)
         self.get_imform_srv = self.create_service(CameraConfig, '~/get_image_format', self.get_imform)
         self.set_imform_srv = self.create_service(CameraConfig, '~/set_image_format', self.set_imform)
         self.set_afpoint_srv = self.create_service(CameraConfig, '~/set_af_point', self.set_afpoint)
@@ -58,7 +56,6 @@ class EOS_node(Node):
         self._preview_video_svr = ActionServer(self,Capture,'~/preview_video',self.preview_video)
         self._burst_srv = ActionServer(self,Capture, '~/burst_capture', self.burst_capture)
         self._video_capture_svr = ActionServer(self,Capture,'~/video_capture',self.video_capture)
-
 
     def sync_date_time(self,request,response):
         self.cam.sync_date_time()
@@ -78,52 +75,27 @@ class EOS_node(Node):
             warnings.warn("No value passed to the manual focus drive service. Focus has not been adjusted.")
             response.output_msg = 'error, missing value x'
             return response
-    
-    def get_aperture(self,request,response):
-        current, choices, msg = self.cam.set_aperture(value=None, list_choices=True)
-        response.current_val = current
-        response.choices = [str(choice) for choice in choices]
-        response.output_msg = msg
+        
+    def get_capture_params(self, request, response):
+        response.aperture = self.aperture
+        response.iso = self.iso
+        response.shutterspeed = self.shutterspeed
+        response.cont_af = self.cont_af
+        response.output_msg = 'Retrieved current capture parameters.'
+        if response.iso == None:
+            response.output_msg += "Note: ISO can't be set remotely in VIDEO mode."
         return response
     
-    def set_aperture(self,request,response):
-        current, choices, msg = self.cam.set_aperture(value=request.x, list_choices=False)
-        response.current_val = current
-        response.choices = [str(choice) for choice in choices]
-        response.output_msg = msg
-        return response
-    
-    def get_shutter_speed(self,request,response):
-        current, choices, msg = self.cam.set_shutterspeed(value=None, list_choices=True)
-        response.current_val = current
-        response.choices = [str(choice) for choice in choices]
-        response.output_msg = msg
-        return response
-    
-    def set_shutter_speed(self,request,response):
-        current, choices, msg = self.cam.set_shutterspeed(value=request.x, list_choices=False)
-        response.current_val = current
-        response.choices = [str(choice) for choice in choices]
-        response.output_msg = msg
-        return response
-    
-    def get_iso(self,request,response):
-        current, choices, msg = self.cam.set_iso(value=None, list_choices=True)
-        response.current_val = current
-        response.choices = [str(choice) for choice in choices]
-        response.output_msg = msg
-        return response
-    
-    def set_iso(self,request,response):
-        current, choices, msg = self.cam.set_iso(value=request.x, list_choices=False)
-        response.current_val = current
-        response.choices = [str(choice) for choice in choices]
-        response.output_msg = msg
-        return response
-    
-    def set_cont_af(self,request,response):
-        current, msg = self.cam.set_continuous_AF(value=request.x)
-        response.current_val = current
+    def set_capture_params(self, request, response):
+
+        # TODO: add check for valid values
+
+        params, msg = self.cam.set_capture_parameters(aperture=request.aperture, iso=request.iso, shutterspeed=request.shutterspeed, cont_af=request.cont_af)
+        self.aperture, self.iso, self.shutterspeed, self.cont_af = params
+        response.aperture = self.aperture
+        response.iso = self.iso
+        response.shutterspeed = self.shutterspeed
+        response.cont_af = self.cont_af
         response.output_msg = msg
         return response
     
