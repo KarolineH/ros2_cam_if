@@ -4,10 +4,10 @@ import warnings
 from rclpy.action import ActionServer
 import os 
 
-# from .cam_interface.capture import EOS
-# from .cam_interface import gphoto_util
-from cam_interface.capture import EOS
-from cam_interface import gphoto_util
+from .cam_interface.capture import EOS
+from .cam_interface import gphoto_util
+# from cam_interface.capture import EOS
+# from cam_interface import gphoto_util
 
 from capture_types.action import Capture
 from capture_types.srv import CameraConfig, CaptureParams
@@ -17,10 +17,10 @@ class EOS_node(Node):
     def __init__(self):
         super().__init__('eos_cam')
 
-        # self.declare_parameter('port', rclpy.Parameter.Type.STRING) # USB port address, to be set in the launch file
-        # self.declare_parameter('target_path', rclpy.Parameter.Type.STRING) # path to the target folder for image and vid downloads, to be set in the launch file
-        self.declare_parameter('port', 'usb:002,019')
-        self.declare_parameter('target_path', '/home/karoline/rosws/media')
+        self.declare_parameter('port', rclpy.Parameter.Type.STRING) # USB port address, to be set in the launch file
+        self.declare_parameter('target_path', rclpy.Parameter.Type.STRING) # path to the target folder for image and vid downloads, to be set in the launch file
+        # self.declare_parameter('port', 'usb:002,004')
+        # self.declare_parameter('target_path', '/home/karoline/rosws/media')
         # when initializing the camera, please make sure to specify a unique target path for media downloads, otherwise files might be overwritten
 
         try:
@@ -49,6 +49,7 @@ class EOS_node(Node):
         self.set_imform_srv = self.create_service(CameraConfig, '~/set_image_format', self.set_imform)
         self.set_afpoint_srv = self.create_service(CameraConfig, '~/set_af_point', self.set_afpoint)
         self.trigger_af_srv = self.create_service(CameraConfig, '~/trigger_af', self.trigger_AF)
+        self.reset_srv = self.create_service(CameraConfig, '~/reset_after_abort', self.call_reset)
 
         # set up actions
         self._single_capture_svr = ActionServer(self,Capture,'~/single_capture',self.single_capture)
@@ -210,6 +211,11 @@ class EOS_node(Node):
         result.output_path = self.get_parameter('target_path').value
         result.output_msg = msg
         return result
+    
+    def call_reset(self, request, response):
+        self.cam.reset_after_abort()
+        response.output_msg = 'Camera node reset.'
+        return response
     
 
 def main():
