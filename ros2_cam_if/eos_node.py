@@ -133,13 +133,16 @@ class EOS_node(Node):
         return response
     
     def single_capture(self, goal_handle):
-        success, msg = self.cam.capture_immediate(download=goal_handle.request.download, target_path=self.get_parameter('target_path').value)
+        success, file_path, msg = self.cam.capture_immediate(download=goal_handle.request.download, target_path=self.get_parameter('target_path').value)
         if success:
             goal_handle.succeed()
         else:
             goal_handle.abort()
         result = Capture.Result()
-        result.output_path = self.get_parameter('target_path').value
+        if file_path != None:
+            result.output_path = file_path
+        else:
+            result.output_path = self.get_parameter('target_path').value
         result.output_msg = msg
         return result
     
@@ -159,14 +162,13 @@ class EOS_node(Node):
     
     def preview_video(self, goal_handle):
         # OVERWRITES previous preview videos by default
-        target_file = self.get_parameter('target_path').value + '/preview.mp4'
-        success, msg = self.cam.record_preview_video(t=goal_handle.request.duration, target_file=target_file , resolution_prio=True)
+        success, file_path, msg = self.cam.record_preview_video(t=goal_handle.request.duration, target_path=self.get_parameter('target_path').value, resolution_prio=True)
         if success:
             goal_handle.succeed()
         else:
             goal_handle.abort()
         result = Capture.Result()
-        result.output_path = target_file
+        result.output_path = file_path
         result.output_msg = msg
         return result
     
@@ -202,13 +204,16 @@ class EOS_node(Node):
     
     def video_capture(self, goal_handle):
         # Video files are named by the camera naming convention, so should not overwrite by default
-        success, msg = self.cam.record_video(t=goal_handle.request.duration, download=goal_handle.request.download, target_path=self.get_parameter('target_path').value)
+        success, file_path, msg = self.cam.record_video(t=goal_handle.request.duration, download=goal_handle.request.download, target_path=self.get_parameter('target_path').value)
         if success:
             goal_handle.succeed()
         else:
             goal_handle.abort()
         result = Capture.Result()
-        result.output_path = self.get_parameter('target_path').value
+        if file_path != None:
+            result.output_path = file_path
+        else:
+            result.output_path = self.get_parameter('target_path').value
         result.output_msg = msg
         return result
     
