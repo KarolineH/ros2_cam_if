@@ -8,6 +8,7 @@
   <license>MIT License, Copyright 2023 Karoline Heiwolt</license>
 
   <exec_depend>rclpy</exec_depend>
+  <exec_depend>ros2launch</exec_depend>
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>gphoto2</exec_depend>
 

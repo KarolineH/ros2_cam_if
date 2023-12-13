@@ -6,8 +6,8 @@ import os
 
 from .cam_interface.capture import EOS
 from .cam_interface import gphoto_util
-# from cam_interface.capture import EOS
-# from cam_interface import gphoto_util
+# from cam_interface.capture import EOS # for debugging
+# from cam_interface import gphoto_util # for debugging
 
 from capture_types.action import Capture
 from capture_types.srv import CameraConfig, CaptureParams
@@ -19,8 +19,8 @@ class EOS_node(Node):
 
         self.declare_parameter('port', rclpy.Parameter.Type.STRING) # USB port address, to be set in the launch file
         self.declare_parameter('target_path', rclpy.Parameter.Type.STRING) # path to the target folder for image and vid downloads, to be set in the launch file
-        # self.declare_parameter('port', 'usb:002,004')
-        # self.declare_parameter('target_path', '/home/karoline/rosws/media')
+        # self.declare_parameter('port', 'usb:002,004') # for debugging
+        # self.declare_parameter('target_path', '/home/karoline/rosws/media') # for debugging
         # when initializing the camera, please make sure to specify a unique target path for media downloads, otherwise files might be overwritten
 
         try:
@@ -220,7 +220,7 @@ class EOS_node(Node):
 
 def main():
     rclpy.init()
-    print(gphoto_util.detect_EOS_cameras()[0])
+    #print(gphoto_util.detect_EOS_cameras()[0]) # for debugging
     cam_node = EOS_node()
 
     rclpy.spin(cam_node)
