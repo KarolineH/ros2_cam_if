@@ -52,7 +52,7 @@ class EOS_node(Node):
         self.reset_srv = self.create_service(CameraConfig, '~/reset_after_abort', self.call_reset)
 
         # set up actions
-        self._single_capture_svr = ActionServer(self,Capture,'~/single_capture',self.single_capture)
+        self._single_capture_svr = ActionServer(self,Capture,'~/capture_image',self.capture_image)
         self._preview_capture_svr = ActionServer(self,Capture,'~/preview_capture',self.preview_capture)
         self._preview_video_svr = ActionServer(self,Capture,'~/preview_video',self.preview_video)
         self._burst_srv = ActionServer(self,Capture, '~/burst_capture', self.burst_capture)
@@ -78,26 +78,25 @@ class EOS_node(Node):
             return response
         
     def get_capture_params(self, request, response):
+        self.aperture, self.iso, self.shutterspeed, self.cont_af = self.cam.get_capture_parameters()
         response.aperture = self.aperture
         response.iso = self.iso
         response.shutterspeed = self.shutterspeed
         response.cont_af = self.cont_af
         response.output_msg = 'Retrieved current capture parameters.'
         if response.iso == None:
-            response.output_msg += "Note: ISO can't be set remotely in VIDEO mode."
+            response.output_msg += "Note: ISO can't be set in VIDEO mode."
         return response
     
     def set_capture_params(self, request, response):
-
-        # TODO: add check for valid values
         inputs = [request.aperture, request.iso, request.shutterspeed, request.cont_af]
         for i,string in enumerate(inputs):
             if len(string) == 0:
                 inputs[i] = None
 
-        params, msg = self.cam.set_capture_parameters(aperture=inputs[0], iso=inputs[1], shutterspeed=inputs[2], c_AF=inputs[3])
-        self.aperture, self.iso, self.shutterspeed, self.cont_af = params
-        response.aperture, response.iso, response.shutterspeed, response.cont_af = params
+        msg = self.cam.set_capture_parameters(aperture=inputs[0], iso=inputs[1], shutterspeed=inputs[2], c_AF=inputs[3])
+        self.aperture, self.iso, self.shutterspeed, self.cont_af = self.cam.get_capture_parameters()
+        response.aperture, response.iso, response.shutterspeed, response.cont_af = self.aperture, self.iso, self.shutterspeed, self.cont_af 
         response.output_msg = msg
         return response
     
@@ -131,8 +130,10 @@ class EOS_node(Node):
         msg = self.cam.trigger_AF()
         response.output_msg = msg
         return response
-    
-    def single_capture(self, goal_handle):
+
+    #TODO: Update the capture action servers to fit the updated capture interface
+
+    def capture_image(self, goal_handle):
         success, file_path, msg = self.cam.capture_immediate(download=goal_handle.request.download, target_path=self.get_parameter('target_path').value)
         if success:
             goal_handle.succeed()
